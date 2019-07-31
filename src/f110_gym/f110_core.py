@@ -85,7 +85,7 @@ class f110Env(Env):
 
         #GYM Properties (set in subclasses)
         self.observation_space = ['lidar', 'steer', 'img']
-        self.action_space = ['steering_angle', 'speed']
+        self.action_space = ['angle', 'speed']
         self.ser_msg_length = 4
 
         self.setup_subs()
@@ -185,7 +185,7 @@ class f110Env(Env):
             data.drive.steering_angle = -0.34
 
         steer = dict(
-            steering_angle = -1.0 * data.drive.steering_angle, 
+            angle = -1.0 * data.drive.steering_angle, 
             steering_angle_velocity = data.drive.steering_angle_velocity,
             speed = data.drive.speed
         )

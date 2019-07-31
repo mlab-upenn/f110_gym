@@ -17,7 +17,7 @@ class SkipEnv(f110Wrapper):
             total_reward += reward
             if done:
                 break
-        print(obs["steer"])
+        #print(obs["steer"])
         return obs, total_reward, done, info
 
     def reset(self, **kwargs):
