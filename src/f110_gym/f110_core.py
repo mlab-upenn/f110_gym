@@ -101,7 +101,7 @@ class f110Env(Env):
         Returns latest observation 
         """
         while(len(self.latest_obs) == 0):
-            rospy.sleep(0.05)
+            rospy.sleep(0.04)
         obs_dict = self.latest_obs[-1]
         return obs_dict
         
