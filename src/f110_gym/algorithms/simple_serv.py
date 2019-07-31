@@ -1,9 +1,9 @@
 from __future__ import print_function
 from distributed.exp_server import ExperienceServer
 import cv2, random, threading, msgpack, os
-from f110_nnet.Online import Online
-from f110_nnet.Metric_Visualizer import Metric_Visualizer
-from f110_nnet.Trainer import Trainer
+from nnet.Online import Online
+from nnet.Metric_Visualizer import Metric_Visualizer
+from nnet.Trainer import Trainer
 from functools import partial
 import msgpack_numpy as m
 import numpy as np
