@@ -22,6 +22,9 @@ class SkipEnv(f110Wrapper):
     def reset(self, **kwargs):
         return self.env.reset(**kwargs)
 
+    def serialize_obs(self):
+        return self.env.serialize_obs()
+
 class PreprocessImg(f110ObservationWrapper):
     import cv2
 
