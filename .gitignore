@@ -1,0 +1,9 @@
+.ipynb_*
+.*
+__*
+src/common*
+main/image_front000000.jpg
+main/*
+!__init__.py
+!.gitignore
+*.pyc

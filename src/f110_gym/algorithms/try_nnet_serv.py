@@ -1,5 +1,5 @@
 from __future__ import print_function
-from distributed.exp_server import ExperienceServer
+from f110_gym.distributed.exp_server import ExperienceServer
 import cv2, random, threading, msgpack, os
 from nnet.Online import Online
 from nnet.Metric_Visualizer import Metric_Visualizer
