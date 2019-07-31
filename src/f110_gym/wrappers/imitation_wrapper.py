@@ -1,17 +1,15 @@
-from f110_core import f110Env, f110ActionWrapper, f110ObservationWrapper, f110Wrapper
+from f110_gym.f110_core import f110Env, f110ActionWrapper, f110ObservationWrapper, f110Wrapper
 
 __author__ = "Dhruv Karthik <dhruvkar@seas.upenn.edu>"
 
 class SkipEnv(f110Wrapper):
-    def __init__(self, env, skip=10):
+    def __init__(self, env, skip=4):
         """Return only 'skip-th frame"""
-        print("INITIALIZED ATLEAST")
         f110Wrapper.__init__(self, env)
         self._skip = skip
         
     def step(self, action):
         """Repeat action & sum reward"""
-        print("TAKING STEPS")
         total_reward = 0.0
         done = None
         for i in range(self._skip):
@@ -19,7 +17,6 @@ class SkipEnv(f110Wrapper):
             total_reward += reward
             if done:
                 break
-        print(i)
         return obs, total_reward, done, info
 
     def reset(self, **kwargs):
@@ -44,6 +41,6 @@ class PreprocessImg(f110ObservationWrapper):
 
 def make_imitation_env(skip=10):
     env = f110Env()
-    #env = PreprocessImg(env)
-    env = SkipEnv(env, skip=200)
+    env = PreprocessImg(env)
+    env = SkipEnv(env, skip=skip)
     return env

@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 from __future__ import print_function
-from wrappers.imitation_wrapper import make_imitation_env
-from f110_core import f110Env
-from distributed.exp_sender import ExperienceSender
+from f110_gym.wrappers.imitation_wrapper import make_imitation_env
+from f110_gym.f110_core import f110Env
+from f110_gym.distributed.exp_sender import ExperienceSender
 import rospy, cv2, random, threading
 import numpy as np
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 from __future__ import print_function
-from wrappers.imitation_wrapper import make_imitation_env
-from f110_core import f110Env
+from f110_gym.wrappers.imitation_wrapper import make_imitation_env
+from f110_gym.f110_core import f110Env
 import rospy, cv2, sys, os
 import threading
 import numpy as np
@@ -10,7 +10,7 @@ __author__ = 'dhruv karthik <dhruvkar@seas.upenn.edu>'
 
 
 def main():
-    env = make_imitation_env()
+    env = make_imitation_env(skip=4)
     #env = f110Env()
     obs = env.reset()
     count = 0
