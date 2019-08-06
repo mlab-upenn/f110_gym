@@ -291,7 +291,7 @@ class f110Env(Env):
             r1 = rfrac(0, 1./4.)
             r2 = rfrac(1./4., 3./4.)
             r3 = rfrac(3./4., 1.) 
-            if mindist(r1, 0.4) or mindist(r2, 0.6) or mindist(r3, 0.4):
+            if mindist(r1, 0.2) or mindist(r2, 0.4) or mindist(r3, 0.2):
                 tc = True
             else:
                 tc = False
