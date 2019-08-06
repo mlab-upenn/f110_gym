@@ -87,7 +87,7 @@ class f110Env(Env):
         self.observation_space = ['lidar', 'steer', 'img']
         self.action_space = ['angle', 'speed']
         self.ser_msg_length = 4
-
+        self.joy_array = []
         self.setup_subs()
 
         #Subscribe to joy (to access record_button) & publish to ackermann
@@ -139,7 +139,7 @@ class f110Env(Env):
         obs = self._get_obs()
         reward = self.get_reward()
         done = self.tooclose()
-        info = {'record':self.record}
+        info = {'record':self.record, 'buttons':self.joy_array}
         self.latest_obs.clear()
         return obs, reward, done, info
     
@@ -207,6 +207,7 @@ class f110Env(Env):
             self.record = True
         else:
             self.record = False
+        self.joy_array = list(data.buttons)
 
     def set_status_str(self, prefix=''):
         status_str = ''
