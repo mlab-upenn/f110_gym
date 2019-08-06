@@ -92,7 +92,7 @@ class f110Env(Env):
 
         #Subscribe to joy (to access record_button) & publish to ackermann
         self.joy_sub = rospy.Subscriber('/vesc/joy', Joy, self.joy_callback)        
-        self.drive_pub = rospy.Publisher("vesc/high_level/ackermann_cmd_mux/input/nav_0", AckermannDriveStamped, queue_size=4) 
+        self.drive_pub = rospy.Publisher("vesc/high_level/ackermann_cmd_mux/input/nav_0", AckermannDriveStamped, queue_size=20) 
 
     ############ GYM METHODS ###################################
 
@@ -116,7 +116,7 @@ class f110Env(Env):
         while(self.tooclose()):
             self.reverse()
         #Back up a bit more
-        for i in range(50):
+        for i in range(10):
             dmsg = self.get_drive_msg(0.0, -2.0)
             self.drive_pub.publish(dmsg)
         self.record = True
