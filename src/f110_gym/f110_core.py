@@ -87,7 +87,7 @@ class f110Env(Env):
         self.observation_space = ['lidar', 'steer', 'img']
         self.action_space = ['angle', 'speed']
         self.ser_msg_length = 4
-
+        self.joy_array = []
         self.setup_subs()
 
         #Subscribe to joy (to access record_button) & publish to ackermann
@@ -115,6 +115,10 @@ class f110Env(Env):
         obs = self._get_obs()
         while(self.tooclose()):
             self.reverse()
+        #Back up a bit more
+        for i in range(50):
+            dmsg = self.get_drive_msg(0.0, -2.0)
+            self.drive_pub.publish(dmsg)
         self.record = True
         self.rev = False
         #TODO: consider sleeping a few milliseconds?
@@ -139,7 +143,7 @@ class f110Env(Env):
         obs = self._get_obs()
         reward = self.get_reward()
         done = self.tooclose()
-        info = {'record':self.record}
+        info = {'record':self.record, 'buttons':self.joy_array}
         self.latest_obs.clear()
         return obs, reward, done, info
     
@@ -207,6 +211,7 @@ class f110Env(Env):
             self.record = True
         else:
             self.record = False
+        self.joy_array = list(data.buttons)
 
     def set_status_str(self, prefix=''):
         status_str = ''
@@ -266,7 +271,7 @@ class f110Env(Env):
             steer_dict = default_steer_dict
 
         rev_angle = steer_dict["angle"]
-        rev_speed = -1.0
+        rev_speed = -2.0
         #print("REVERSE {rev_angle}".format(rev_angle = rev_angle))
         drive_msg = self.get_drive_msg(rev_angle, rev_speed)
         self.drive_pub.publish(drive_msg)
