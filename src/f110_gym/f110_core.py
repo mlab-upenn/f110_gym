@@ -115,6 +115,10 @@ class f110Env(Env):
         obs = self._get_obs()
         while(self.tooclose()):
             self.reverse()
+        #Back up a bit more
+        for i in range(50):
+            dmsg = self.get_drive_msg(0.0, -2.0)
+            self.drive_pub.publish(dmsg)
         self.record = True
         self.rev = False
         #TODO: consider sleeping a few milliseconds?
@@ -267,7 +271,7 @@ class f110Env(Env):
             steer_dict = default_steer_dict
 
         rev_angle = steer_dict["angle"]
-        rev_speed = -1.0
+        rev_speed = -2.0
         #print("REVERSE {rev_angle}".format(rev_angle = rev_angle))
         drive_msg = self.get_drive_msg(rev_angle, rev_speed)
         self.drive_pub.publish(drive_msg)
