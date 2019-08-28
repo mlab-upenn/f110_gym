@@ -91,6 +91,8 @@ class SIM_f110Env(Env):
         Reset to initial position
         """
         self.client.reset()
+        time.sleep(1)
+        return self._get_obs()
 
     def get_reward(self):
         """
