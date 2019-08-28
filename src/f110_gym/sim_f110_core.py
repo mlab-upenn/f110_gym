@@ -7,7 +7,6 @@ import airsim
 
 __author__ = 'Dhruv Karthik <dhruvkar@seas.upenn.edu>'
 
-
 class Env(object):
     """
     Stripped down version from OpenaiGym
@@ -62,19 +61,17 @@ class SIM_f110Env(Env):
         self.observation_space = ['lidar', 'steer', 'img']
         self.action_space = ['angle', 'speed']
 
-    def _get_imgs(self, labels=["0"]):
+    def _get_imgs(self, labels=["front_center"]):
         label_to_func = lambda lbl: airsim.ImageRequest(lbl, airsim.ImageType.Scene, False, False)
-        bytestr_to_np = lambda rep: np.fromstring(rep.image_data_uint8, dtype=np.uint8).reshape(rep.height, rep.width, 4)[0:2]
-
-        responses = self.client.simGetImages(map(label_to_func, labels))
-        images = map(bytestr_to_np, responses)
+        bytestr_to_np = lambda rep: np.fromstring(rep.image_data_uint8, dtype=np.uint8).reshape(rep.height, rep.width, -1)
+        responses = self.client.simGetImages(list(map(label_to_func, labels)))
+        images = list(map(bytestr_to_np, responses))
         return images
     
-    def add_to_history(self, data):
-        if abs(data.drive.steering_angle) > 0.05 and data.drive.steering_angle < -0.05 and data.drive.steering_angle is not None:
-            steer_dict = {"angle":data.drive.steering_angle, "speed":data.drive.speed}
+    def add_to_history(self, steer):
+        if abs(steer["angle"]) > 0.05 and steer["angle"] < -0.05:
             for i in range(40):
-                self.history.append(steer_dict)
+                self.history.append(steer)
 
     def _get_obs(self):
         #Get Camera imgs
