@@ -57,8 +57,7 @@ class Env(object):
         raise NotImplementedError
     
 class f110Env(Env):
-    """
-    Implements a Gym Environment & neccessary funcs for the F110 Autonomous RC Car(similar structure to gym.Env or gym.Wrapper)
+    """ Implements a Gym Environment & neccessary funcs for the F110 Autonomous RC Car(similar structure to gym.Env or gym.Wrapper)
     """
     def __init__(self):
         rospy.init_node("Gym_Recorder", anonymous=True, disable_signals=True)
@@ -70,7 +69,6 @@ class f110Env(Env):
 
             'steer':{'topic':'/vesc/low_level/ackermann_cmd_mux/output', 'type':AckermannDriveStamped, 'callback':self.steer_callback}
         }
-
 
         #one observation could be 4 consecutive readings, so init deque for safety
         self.latest_obs = deque(maxlen=4)         
@@ -162,8 +160,10 @@ class f110Env(Env):
             multipart_msg = [lidar_dump, steer_dump, cv_md_dump, cv_img]
             return multipart_msg
         return _ser
+
     ############ GYM METHODS ###################################
     ############ ROS HANDLING METHODS ###################################
+
     def setup_subs(self):
         """
         Initializes subscribers w/ obs_info & returns a list of subscribers
