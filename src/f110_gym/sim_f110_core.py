@@ -73,14 +73,24 @@ class SIM_f110Env(Env):
             for i in range(40):
                 self.history.append(steer)
 
+    def process_lidar(self, lidarData):
+        """ Process pointcloud lidar data into a ranges array 
+        """
+        pc = lidarData.point_cloud
+        pcnp = np.array(pc)
+        pcnp = np.reshape(pc, (-1, 3))
+        pcnp = pcnp[..., 0:2]
+        return pcnp
+
     def _get_obs(self):
         #Get Camera imgs
         imgs = self._get_imgs()
 
         #Get LiDAR reading & transform it to look planar
         lidarData = self.client.getLidarData()
+        proc_lidar = self.process_lidar()
 
-        #Get steer data (dummy for now)
+        #Get steer data
         steer = {"angle": 0.0, "steering_angle_velocity": 0.0, "speed": 0.0}
         latest_dict = {'lidar': lidarData, 'steer': steer, 'img':imgs}
         self.add_to_history(steer)
