@@ -60,18 +60,8 @@ class SIM_f110Env(Env):
         #GYM Properties (set in subclasses)
         self.observation_space = ['lidar', 'steer', 'img']
         self.action_space = ['angle', 'speed']
-
-    def _get_imgs(self, labels=["front_center"]):
-        label_to_func = lambda lbl: airsim.ImageRequest(lbl, airsim.ImageType.Scene, False, False)
-        bytestr_to_np = lambda rep: np.fromstring(rep.image_data_uint8, dtype=np.uint8).reshape(rep.height, rep.width, -1)
-        responses = self.client.simGetImages(list(map(label_to_func, labels)))
-        images = list(map(bytestr_to_np, responses))
-        return images
     
-    def add_to_history(self, steer):
-        if abs(steer["angle"]) > 0.05 and steer["angle"] < -0.05:
-            for i in range(40):
-                self.history.append(steer)
+    ###########GYM METHODS##################################################
 
     def transformLidar(self, lidarData):
         """ Transform Lidar pointcloud into ranges array
@@ -88,9 +78,9 @@ class SIM_f110Env(Env):
 
         #Get LiDAR reading & transform it to look planar
         lidarData = self.client.getLidarData()
-        self.transformLidar(lidarData)
+        proc_lidar = self.process_lidar(lidarData)
 
-        #Get steer data (dummy for now)
+        #Get steer data
         steer = {"angle": 0.0, "steering_angle_velocity": 0.0, "speed": 0.0}
         latest_dict = {'lidar': lidarData, 'steer': steer, 'img':imgs}
         self.add_to_history(steer)
@@ -134,3 +124,46 @@ class SIM_f110Env(Env):
         Uses latest_obs to determine if we are too_close (currently uses LIDAR)
         """
         return False
+
+    ###########EXTRA METHODS##################################################
+
+    def _get_imgs(self, labels=["front_center"]):
+        label_to_func = lambda lbl: airsim.ImageRequest(lbl, airsim.ImageType.Scene, False, False)
+        bytestr_to_np = lambda rep: np.fromstring(rep.image_data_uint8, dtype=np.uint8).reshape(rep.height, rep.width, -1)
+        responses = self.client.simGetImages(list(map(label_to_func, labels)))
+        images = list(map(bytestr_to_np, responses))
+        return images
+    
+    def add_to_history(self, steer):
+        if abs(steer["angle"]) > 0.05 and steer["angle"] < -0.05:
+            for i in range(40):
+                self.history.append(steer)
+    
+    def xy_to_radrange(self, x, y):
+        """Convert x, y to rad,range tuple
+        """
+        rang = x**2 + y**2
+        rad = math.atan(y, x)
+        return rang, rad
+
+    def vis_lidarpc(self, lidarData):
+        """ Visualize a lidarPointcloud"""
+        
+
+    def pc_to_np(self, lidarData):
+        #Get out the x,y
+        pc = lidarData.point_cloud
+        pcnp = np.array(pc)
+        pcnp = np.reshape(pc, (-1, 3))
+        pcnp = pcnp[..., 0:2]
+        return pcnp
+
+    def process_lidar(self, lidarData):
+        """ Process pointcloud lidar data into a ranges array 
+        """
+        pcnp = self.pc_to_np(lidarData)
+        #convert to ranges-radian measurement
+        #LIDAR info - angle_min: -1.5707950592 angle_incr: 0.00291157560432 
+        
+        
+        return pcnp
