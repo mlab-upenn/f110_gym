@@ -3,6 +3,8 @@ import os, sys, cv2, math, time
 import numpy as np
 from collections import deque
 
+import pdb
+
 import airsim
 
 __author__ = 'Dhruv Karthik <dhruvkar@seas.upenn.edu>'
@@ -77,7 +79,10 @@ class SIM_f110Env(Env):
         imgs = self._get_imgs()
 
         #Get LiDAR reading & transform it to look planar
-        lidarData = self.client.getLidarData()
+        while True:
+            lidarData = self.client.getLidarData()
+            if len(lidarData.point_cloud) >= 3:
+                break
         proc_lidar = self.process_lidar(lidarData)
 
         #Get steer data
@@ -143,12 +148,28 @@ class SIM_f110Env(Env):
         """Convert x, y to rad,range tuple
         """
         rang = x**2 + y**2
-        rad = math.atan(y, x)
-        return rang, rad
+        rad = math.atan2(y, x)
+        rad -= math.pi/2.
+        return rad, rang
 
-    def vis_lidarpc(self, lidarData):
-        """ Visualize a lidarPointcloud"""
-        
+    def vis_lidarpc(self, lidar):
+        """ Visualize a lidarPointcloud
+        Expects lidar data in 2d array [x, y]
+        """
+        # lidar_frame = np.ones((500, 500, 3)) * 75
+        lidar_frame = np.zeros((500, 500, 3))
+        cx = 250
+        cy = 250
+        rangecheck = lambda x, y: abs(x) < 1000. and abs(y) < 1000.
+        for i in range(lidar.shape[0]):
+            x = lidar[i, 0]
+            y = lidar[i, 1]
+            if (rangecheck(x, y)):
+                scaled_x = int(cx + x*50) 
+                scaled_y = int(cy - y*50)
+                cv2.circle(lidar_frame, (scaled_x, scaled_y), 1, (255, 255, 255), -1)
+        cv2.imshow("lidarframe", lidar_frame)
+        cv2.waitKey(1)
 
     def pc_to_np(self, lidarData):
         #Get out the x,y
@@ -156,14 +177,32 @@ class SIM_f110Env(Env):
         pcnp = np.array(pc)
         pcnp = np.reshape(pc, (-1, 3))
         pcnp = pcnp[..., 0:2]
-        return pcnp
+        out = pcnp.copy()
+        out[:, 0] = pcnp[:, 1]
+        out[:, 1] = pcnp[:, 0]
+        return out
+
+    def rads_to_ranges(self, rads):
+        """Convert sorted (rad, ranges) list to laserscan message
+        """
+        ranges = []
+        angle_min = -math.pi/2.
+        angle_incr = 0.027
+        for i in range(rads):
+                
 
     def process_lidar(self, lidarData):
         """ Process pointcloud lidar data into a ranges array 
         """
         pcnp = self.pc_to_np(lidarData)
+        #self.vis_lidarpc(pcnp)
         #convert to ranges-radian measurement
-        #LIDAR info - angle_min: -1.5707950592 angle_incr: 0.00291157560432 
-        
-        
+        rads = []
+        for i in range(pcnp.shape[0]):
+            rad, rang = self.xy_to_radrange(pcnp[i, 0], pcnp[i, 1])
+            rads.append((rad, rang))
+        rads.sort(key=lambda x:x[1])
+
+        #LIDAR info - angle_min: -1.5707950592 angle_incr: 0.027 
+        lidarData = self.rads_to_ranges(rads)
         return pcnp
