@@ -78,16 +78,16 @@ class SIM_f110Env(Env):
         #Get Camera imgs
         imgs = self._get_imgs()
 
-        #Get LiDAR reading & transform it to look planar
+        #Get LiDAR reading & sort returned pointclouds according to their angle (from left)
         while True:
             lidarData = self.client.getLidarData()
             if len(lidarData.point_cloud) >= 3:
                 break
-        proc_lidar = self.process_lidar(lidarData)
+        lidarData = self.process_lidar(lidarData)
 
         #Get steer data
         steer = {"angle": 0.0, "steering_angle_velocity": 0.0, "speed": 0.0}
-        latest_dict = {'lidar': lidarData, 'steer': steer, 'img':imgs}
+        latest_dict = {'lidar_pc': lidarData, 'steer': steer, 'img':imgs}
         self.add_to_history(steer)
         return latest_dict
 
@@ -143,14 +143,6 @@ class SIM_f110Env(Env):
         if abs(steer["angle"]) > 0.05 and steer["angle"] < -0.05:
             for i in range(40):
                 self.history.append(steer)
-    
-    def xy_to_radrange(self, x, y):
-        """Convert x, y to rad,range tuple
-        """
-        rang = x**2 + y**2
-        rad = math.atan2(y, x)
-        rad -= math.pi/2.
-        return rad, rang
 
     def vis_lidarpc(self, lidar):
         """ Visualize a lidarPointcloud
@@ -177,32 +169,26 @@ class SIM_f110Env(Env):
         pcnp = np.array(pc)
         pcnp = np.reshape(pc, (-1, 3))
         pcnp = pcnp[..., 0:2]
-        out = pcnp.copy()
+        out = np.empty_like(pcnp)
         out[:, 0] = pcnp[:, 1]
         out[:, 1] = pcnp[:, 0]
         return out
 
-    def rads_to_ranges(self, rads):
-        """Convert sorted (rad, ranges) list to laserscan message
-        """
-        ranges = []
-        angle_min = -math.pi/2.
-        angle_incr = 0.027
-        for i in range(rads):
-                
-
     def process_lidar(self, lidarData):
         """ Process pointcloud lidar data into a ranges array 
         """
-        pcnp = self.pc_to_np(lidarData)
-        #self.vis_lidarpc(pcnp)
-        #convert to ranges-radian measurement
-        rads = []
-        for i in range(pcnp.shape[0]):
-            rad, rang = self.xy_to_radrange(pcnp[i, 0], pcnp[i, 1])
-            rads.append((rad, rang))
-        rads.sort(key=lambda x:x[1])
+        lidarData = self.pc_to_np(lidarData)
 
-        #LIDAR info - angle_min: -1.5707950592 angle_incr: 0.027 
-        lidarData = self.rads_to_ranges(rads)
-        return pcnp
+        #sort lidarData by radians measurmeent
+        pt_to_rad = lambda pt : math.atan2(pt[1], pt[0])
+        lidar_out = np.empty_like(lidarData)
+        rads = []
+        
+        # for i in range(pcnp.shape[0]):
+        #     rad, rang = self.xy_to_radrange(pcnp[i, 0], pcnp[i, 1])
+        #     rads.append((rad, rang))
+        # rads.sort(key=lambda x:x[1])
+
+        # #LIDAR info - angle_min: -1.5707950592 angle_incr: 0.027 
+        # lidarData = self.rads_to_ranges(rads)
+        # return pcnp
