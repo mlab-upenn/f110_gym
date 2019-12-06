@@ -63,7 +63,9 @@ class SIM_f110Env(Env):
         self.observation_space = ['lidar', 'steer', 'img']
         self.action_space = ['angle', 'speed']
         self.sensor_info = {"angle_min":-85.0 * (math.pi/180.0), "angle_incr":1e-3}
+
     ###########GYM METHODS##################################################
+
     def data_to_xyz(self, data):
         """ Transform Lidar pointcloud into [x, y, z]
         """
@@ -96,6 +98,21 @@ class SIM_f110Env(Env):
         self.client.reset()
         time.sleep(1)
         return self._get_obs()
+
+    def get_reward(self):
+        """
+        TODO:Implement reward functionality
+        """
+        return 0
+
+    def step(self, action):
+        """
+        Action should be a steer_dict = {"angle":float, "speed":float}
+        """
+        car_controls = airsim.CarControls()
+        car_controls.throttle = action.get("speed")
+        car_controls.steering = action.get("angle")
+
         #execute action
         self.client.setCarControls(car_controls)
         time.sleep(0.01)
