@@ -65,14 +65,13 @@ class SIM_f110Env(Env):
     
     ###########GYM METHODS##################################################
 
-    def transformLidar(self, lidarData):
-        """ Transform Lidar pointcloud into ranges array
+    def data_to_xyz(self, data):
+        """ Transform Lidar pointcloud into [x, y, z]
         """
-        pc = lidarData.point_cloud
-        pcnp = np.array(pc)
-        pcnp = np.reshape(pcnp, (-1, 3))
-        pcnp = pcnp[..., 0:2]
-        return pcnp
+        # reshape array of floats to array of [X,Y,Z]
+        points = np.array(data.point_cloud, dtype=np.dtype('f4'))
+        points = np.reshape(points, (int(points.shape[0]/3), 3))
+        return points
 
     def _get_obs(self):
         #Get Camera imgs
@@ -83,11 +82,11 @@ class SIM_f110Env(Env):
             lidarData = self.client.getLidarData()
             if len(lidarData.point_cloud) >= 3:
                 break
-        lidarData = self.process_lidar(lidarData)
+        lidarData = self.data_to_xyz(lidarData)
 
         #Get steer data
         steer = {"angle": 0.0, "steering_angle_velocity": 0.0, "speed": 0.0}
-        latest_dict = {'lidar_pc': lidarData, 'steer': steer, 'img':imgs}
+        latest_dict = {'lidar': lidarData, 'steer': steer, 'img':imgs}
         self.add_to_history(steer)
         return latest_dict
 
@@ -144,11 +143,10 @@ class SIM_f110Env(Env):
             for i in range(40):
                 self.history.append(steer)
 
-    def vis_lidarpc(self, lidar):
+    def render_lidar2D(self, lidar):
         """ Visualize a lidarPointcloud
         Expects lidar data in 2d array [x, y]
         """
-        # lidar_frame = np.ones((500, 500, 3)) * 75
         lidar_frame = np.zeros((500, 500, 3))
         cx = 250
         cy = 250
@@ -162,33 +160,3 @@ class SIM_f110Env(Env):
                 cv2.circle(lidar_frame, (scaled_x, scaled_y), 1, (255, 255, 255), -1)
         cv2.imshow("lidarframe", lidar_frame)
         cv2.waitKey(1)
-
-    def pc_to_np(self, lidarData):
-        #Get out the x,y
-        pc = lidarData.point_cloud
-        pcnp = np.array(pc)
-        pcnp = np.reshape(pc, (-1, 3))
-        pcnp = pcnp[..., 0:2]
-        out = np.empty_like(pcnp)
-        out[:, 0] = pcnp[:, 1]
-        out[:, 1] = pcnp[:, 0]
-        return out
-
-    def process_lidar(self, lidarData):
-        """ Process pointcloud lidar data into a ranges array 
-        """
-        lidarData = self.pc_to_np(lidarData)
-
-        #sort lidarData by radians measurmeent
-        pt_to_rad = lambda pt : math.atan2(pt[1], pt[0])
-        lidar_out = np.empty_like(lidarData)
-        rads = []
-        
-        # for i in range(pcnp.shape[0]):
-        #     rad, rang = self.xy_to_radrange(pcnp[i, 0], pcnp[i, 1])
-        #     rads.append((rad, rang))
-        # rads.sort(key=lambda x:x[1])
-
-        # #LIDAR info - angle_min: -1.5707950592 angle_incr: 0.027 
-        # lidarData = self.rads_to_ranges(rads)
-        # return pcnp
