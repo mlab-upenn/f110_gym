@@ -85,6 +85,7 @@ class SIM_f110Env(Env):
                 break
         lidarData = self.data_to_xyz(lidarData)
 
+
         #Get steer data
         steer = {"angle": 0.0, "steering_angle_velocity": 0.0, "speed": 0.0}
         latest_dict = {'lidar': lidarData, 'steer': steer, 'img':imgs}
@@ -114,7 +115,11 @@ class SIM_f110Env(Env):
         car_controls.steering = action.get("angle")
 
         #execute action
-        self.client.setCarControls(car_controls)
+        # self.client.setCarControls(car_controls)
+        position = airsim.Vector3r(action.get("speed"), 0, 0)
+        heading = airsim.utils.to_quaternion(0, 0, 0)
+        pose = airsim.Pose(position, heading)
+        self.client.simSetVehiclePose(pose, True)
         time.sleep(0.01)
 
         #get reward & check if done & return
