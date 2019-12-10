@@ -294,7 +294,7 @@ class SIM_f110Env(Env):
         Reset to initial position
         """
         self.client.reset()
-        time.sleep(2) #SLEEP UNTIL CAR TOUCHES THE GROUND -> Or else shaking initial_pos
+        time.sleep(3) #SLEEP UNTIL CAR TOUCHES THE GROUND -> Or else shaking initial_pos
         self.curr_pose = self.client.simGetVehiclePose()
         self.car_state.init_state_from_pose(self.curr_pose)
         return self._get_obs()
@@ -360,7 +360,11 @@ class SIM_f110Env(Env):
         Uses latest_obs to determine if we are too_close (currently uses LIDAR)
         """
         collision_info = self.client.simGetCollisionInfo()
-        return collision_info.has_collided
+        z_norm = collision_info.normal.z_val
+        y_pos = collision_info.position.y_val
+        if(collision_info.has_collided and (z_norm != -1 or y_pos < -1)):
+            return True
+        return False
 
     ###########EXTRA METHODS##################################################
 
