@@ -256,7 +256,7 @@ class SIM_f110Env(Env):
         #GYM Properties (set in subclasses)
         self.observation_space = ['lidar', 'steer', 'img']
         self.action_space = ['angle', 'speed']
-        self.sensor_info = {"angle_min":-85.0 * (math.pi/180.0), "angle_incr":1e-3}
+        self.sensor_info = {"angle_min":-135.0 * (math.pi/180.0), "angle_incr":.004363323}
 
         self.car_state = Car()
         self.curr_pose = None
@@ -329,21 +329,22 @@ class SIM_f110Env(Env):
         """
         Action should be a steer_dict = {"angle":float, "speed":float}
         """
-        # car_controls = airsim.CarControls()
-        # car_controls.throttle = action.get("speed")
-        # car_controls.steering = action.get("angle")
+        car_controls = airsim.CarControls()
+        car_controls.throttle = action.get("speed")
+        car_controls.steering = action.get("angle")
 
-        negspeed = action["speed"] * -1
-        negangle = action["angle"] * -1
-        action["speed"] = negspeed
-        action["angle"] = negangle
+        self.client.setCarControls(car_controls)
+
+        # negspeed = action["speed"] * -1
+        # negangle = action["angle"] * -1
+        # action["speed"] = negspeed
+        # action["angle"] = negangle
         
-        #Update Kinematics using Bicycle Model
-        # new_pose = self.update_kinematics(action)
-        new_pose = self.car_state.update_state(action)
+        # # Update Kinematics using Bicycle Model
+        # new_pose = self.car_state.update_state(action)
 
 
-        self.client.simSetVehiclePose(new_pose, True)
+        # self.client.simSetVehiclePose(new_pose, True)
         
         time.sleep(0.001)
 
@@ -358,7 +359,8 @@ class SIM_f110Env(Env):
         """
         Uses latest_obs to determine if we are too_close (currently uses LIDAR)
         """
-        return False
+        collision_info = self.client.simGetCollisionInfo()
+        return collision_info.has_collided
 
     ###########EXTRA METHODS##################################################
 
@@ -386,7 +388,7 @@ class SIM_f110Env(Env):
             x = lidar[i, 0]
             y = lidar[i, 1]
             if (rangecheck(x, y)):
-                scaled_x = int(cx + x*50) 
+                scaled_x = int(cx + x*50)
                 scaled_y = int(cy - y*50)
                 cv2.circle(lidar_frame, (scaled_x, scaled_y), 1, (255, 255, 255), -1)
         cv2.imshow("lidarframe", lidar_frame)
