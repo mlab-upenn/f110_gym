@@ -1,6 +1,7 @@
 from __future__ import print_function
 import os, sys, cv2, math, time
 import numpy as np
+from f110_core import Env
 from collections import deque
 
 import pdb
@@ -8,47 +9,6 @@ import pdb
 import airsim
 
 __author__ = 'Dhruv Karthik <dhruvkar@seas.upenn.edu>'
-
-
-class Env(object):
-    """
-    Stripped down version from OpenaiGym
-    """
-    # Set this in SOME subclasses
-    metadata = {'render.modes': []}
-    reward_range = (-float('inf'), float('inf'))
-    spec = None
-
-    # Set these in ALL subclasses
-    action_space = None
-    observation_space = None
-    ser_msg_length = 0
-
-    def step(self, action):
-        """Run one timestep of the environment's dynamics. When end of
-        episode is reached, you are responsible for calling `reset()`
-        to reset this environment's state.
-        Accepts an action and returns a tuple (observation, reward, done, info).
-        Args:
-            action (object): an action provided by the agent
-        Returns:
-            observation (object): agent's observation of the current environment
-            reward (float) : amount of reward returned after previous action
-            done (bool): whether the episode has ended, in which case further step() calls will return undefined results
-            info (dict): contains auxiliary diagnostic information (helpful for debugging, and sometimes learning)
-        """
-        raise NotImplementedError
-
-    def reset(self, **kwargs):
-        """Resets the state of the environment and returns an initial observation.
-        Returns: 
-            observation (object): the initial observation.
-        """
-        raise NotImplementedError
-
-    def serialize_obs(self):
-        """Returns a function that allows you to serialize each observation as a multipart"""
-        raise NotImplementedError
 
 dt = 0.01
 class CarParams(object):
