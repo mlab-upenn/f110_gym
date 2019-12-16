@@ -59,10 +59,10 @@ class Env(object):
 class f110Env(Env):
     """ Implements a Gym Environment & neccessary funcs for the F110 Autonomous RC Car Sensor Suite(similar structure to gym.Env or gym.Wrapper)
     """
-    def __init__(self, obs_info=None):
+    def __init__(self, obs_info=None, joy_topic='/vesc/joy', drive_topic='vesc/high_level/ackermann_cmd_mux/input/nav_0'):
         rospy.init_node("Gym_Recorder", anonymous=True, disable_signals=True)
 
-        #At least need LIDAR, IMG & STEER for everything here to work 
+        #At least need STEER & JOY for everything here to work 
         if obs_info is None:
             self.obs_info = {
                 'lidar': {'topic':'/scan', 'type':LaserScan, 'callback':self.lidar_callback},
@@ -75,7 +75,6 @@ class f110Env(Env):
             assert(self.is_valid_obs(obs_info)), "Malformed obs_dict input"
             self.obs_info = obs_info
 
-        #one observation could be 4 consecutive readings, so init deque for safety
         self.latest_obs = deque(maxlen=1) 
         self.latest_reading_dict = {}
         self.record = False
@@ -94,8 +93,8 @@ class f110Env(Env):
         self.setup_subs()
 
         #Subscribe to joy (to access record_button) & publish to ackermann
-        self.joy_sub = rospy.Subscriber('/vesc/joy', Joy, self.joy_callback)        
-        self.drive_pub = rospy.Publisher("vesc/high_level/ackermann_cmd_mux/input/nav_0", AckermannDriveStamped, queue_size=20) 
+        self.joy_sub = rospy.Subscriber(joy_topic, Joy, self.joy_callback)        
+        self.drive_pub = rospy.Publisher(drive_topic, AckermannDriveStamped, queue_size=20) 
     
     ############ MISC METHODS ##################################
     def is_valid_obs(self, obs_info):
@@ -108,7 +107,6 @@ class f110Env(Env):
             if not hassub(obs_info[topic]):
                 return False
         return True
-
 
     ############ GYM METHODS ###################################
 
@@ -135,7 +133,6 @@ class f110Env(Env):
         for i in range(10):
             dmsg = self.get_drive_msg(0.0, -2.0)
             self.drive_pub.publish(dmsg)
-        self.record = True
         self.rev = False
         #TODO: consider sleeping a few milliseconds?
         self.latest_obs.clear()
@@ -159,7 +156,7 @@ class f110Env(Env):
         obs = self._get_obs()
         reward = self.get_reward()
         done = self.tooclose()
-        info = {'record':self.record, 'buttons':self.joy_array}
+        info = {'buttons':self.joy_array}
         self.latest_obs.clear()
         return obs, reward, done, info
     
@@ -184,21 +181,29 @@ class f110Env(Env):
 
     def setup_subs(self):
         """
-        Initializes subscribers w/ obs_info & returns a list of subscribers
+        Initializes subscribers w/ obs_info via message_filter and registers callback
         """
         obs_info = self.obs_info
-        makesub = lambda subdict : rospy.Subscriber(subdict['topic'], subdict['type'], subdict['callback']) 
+        make_msgfilter_sub = lambda subdict : message_filters.Subscriber(subdict['topic'], subdict['type'])
 
         sublist = []
         for topic in obs_info:
-            sublist.append(makesub(obs_info[topic]))
-        self.sublist = sublist
+            sublist.append(make_msgfilter_sub(obs_info[topic]))
+        ts = message_filters.ApproximateTimeSynchronizer(sublist, 10, 0.1)
+        ts.registerCallback(self.sync_callback)
+    
+    def sync_callback(self, *argv):
+        """
+        Synchronously execute each callback
+        """
+        for i, topic in enumerate(self.obs_info):
+            topic['callback'](argv[i])
 
     def add_to_history(self, data):
         if abs(data.drive.steering_angle) > 0.05 and data.drive.steering_angle < -0.05 and data.drive.steering_angle is not None:
             steer_dict = {"angle":data.drive.steering_angle, "speed":data.drive.speed}
             for i in range(40):
-                self.history.append(steer_dict) 
+                self.history.append(steer_dict)
 
     def steer_callback(self, data):
         if data.drive.steering_angle > 0.34:
@@ -224,11 +229,6 @@ class f110Env(Env):
         self.latest_reading_dict["lidar"] = lidar 
     
     def joy_callback(self, data):
-        record_button = data.buttons[1]
-        if record_button:
-            self.record = True
-        else:
-            self.record = False
         self.joy_array = list(data.buttons)
 
     def set_status_str(self, prefix=''):
