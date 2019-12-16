@@ -176,7 +176,7 @@ class f110Env(Env):
         hassub = lambda subdict : 'topic' in subdict and 'type' in subdict and 'callback' in subdict
 
         for topic in obs_info:
-            if not hassub(obs_info[topic])
+            if not hassub(obs_info[topic]):
                 return False
         return True
 
