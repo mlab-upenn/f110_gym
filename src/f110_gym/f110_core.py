@@ -8,11 +8,11 @@ from collections import deque
 
 #ROS Dependencies
 import roslib, rospy
-import numpy as np
 from std_msgs.msg import String
 from ackermann_msgs.msg import AckermannDriveStamped, AckermannDrive
 from sensor_msgs.msg import Image, LaserScan, Joy
 from cv_bridge import CvBridge, CvBridgeError
+import message_filters
 
 __author__ = 'Dhruv Karthik <dhruvkar@seas.upenn.edu>'
 
@@ -57,21 +57,26 @@ class Env(object):
         raise NotImplementedError
     
 class f110Env(Env):
-    """ Implements a Gym Environment & neccessary funcs for the F110 Autonomous RC Car(similar structure to gym.Env or gym.Wrapper)
+    """ Implements a Gym Environment & neccessary funcs for the F110 Autonomous RC Car Sensor Suite(similar structure to gym.Env or gym.Wrapper)
     """
-    def __init__(self):
+    def __init__(self, obs_info=None):
         rospy.init_node("Gym_Recorder", anonymous=True, disable_signals=True)
+
         #At least need LIDAR, IMG & STEER for everything here to work 
-        self.obs_info = {
-            'lidar': {'topic':'/scan', 'type':LaserScan, 'callback':self.lidar_callback},
+        if obs_info is None:
+            self.obs_info = {
+                'lidar': {'topic':'/scan', 'type':LaserScan, 'callback':self.lidar_callback},
 
-            'img': {'topic':'/usb_cam/image_raw', 'type':Image, 'callback':self.img_callback},
+                'img': {'topic':'/usb_cam/image_raw', 'type':Image, 'callback':self.img_callback},
 
-            'steer':{'topic':'/vesc/low_level/ackermann_cmd_mux/output', 'type':AckermannDriveStamped, 'callback':self.steer_callback}
-        }
+                'steer':{'topic':'/vesc/low_level/ackermann_cmd_mux/output', 'type':AckermannDriveStamped, 'callback':self.steer_callback}
+            }
+        else:
+            self.is_valid_obs(obs_info)
+            self.obs_info = obs_info
 
         #one observation could be 4 consecutive readings, so init deque for safety
-        self.latest_obs = deque(maxlen=4)         
+        self.latest_obs = deque(maxlen=1) 
         self.latest_reading_dict = {}
         self.record = False
         self.rev = False
@@ -82,7 +87,7 @@ class f110Env(Env):
         self.history= deque(maxlen=500) #for reversing during reset
 
         #GYM Properties (set in subclasses)
-        self.observation_space = ['lidar', 'steer', 'img']
+        self.observation_space = self.obs_info.keys()
         self.action_space = ['angle', 'speed']
         self.ser_msg_length = 4
         self.joy_array = []
@@ -163,6 +168,17 @@ class f110Env(Env):
 
     ############ GYM METHODS ###################################
     ############ ROS HANDLING METHODS ###################################
+
+    def is_valid_obs(self, obs_info):
+        """
+        Checks if obs_info dict provided is valid
+        """
+        hassub = lambda subdict : 'topic' in subdict and 'type' in subdict and 'callback' in subdict
+
+        for topic in obs_info:
+            if not hassub(obs_info[topic])
+                return False
+        return True
 
     def setup_subs(self):
         """
