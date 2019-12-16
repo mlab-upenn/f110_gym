@@ -72,7 +72,7 @@ class f110Env(Env):
                 'steer':{'topic':'/vesc/low_level/ackermann_cmd_mux/output', 'type':AckermannDriveStamped, 'callback':self.steer_callback}
             }
         else:
-            self.is_valid_obs(obs_info)
+            assert(self.is_valid_obs(obs_info)), "Malformed obs_dict input"
             self.obs_info = obs_info
 
         #one observation could be 4 consecutive readings, so init deque for safety
@@ -96,6 +96,19 @@ class f110Env(Env):
         #Subscribe to joy (to access record_button) & publish to ackermann
         self.joy_sub = rospy.Subscriber('/vesc/joy', Joy, self.joy_callback)        
         self.drive_pub = rospy.Publisher("vesc/high_level/ackermann_cmd_mux/input/nav_0", AckermannDriveStamped, queue_size=20) 
+    
+    ############ MISC METHODS ##################################
+    def is_valid_obs(self, obs_info):
+        """
+        Checks if obs_info dict provided is valid
+        """
+        hassub = lambda subdict : 'topic' in subdict and 'type' in subdict and 'callback' in subdict
+
+        for topic in obs_info:
+            if not hassub(obs_info[topic]):
+                return False
+        return True
+
 
     ############ GYM METHODS ###################################
 
@@ -168,17 +181,6 @@ class f110Env(Env):
 
     ############ GYM METHODS ###################################
     ############ ROS HANDLING METHODS ###################################
-
-    def is_valid_obs(self, obs_info):
-        """
-        Checks if obs_info dict provided is valid
-        """
-        hassub = lambda subdict : 'topic' in subdict and 'type' in subdict and 'callback' in subdict
-
-        for topic in obs_info:
-            if not hassub(obs_info[topic]):
-                return False
-        return True
 
     def setup_subs(self):
         """
